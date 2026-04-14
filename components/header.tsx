@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
-import { Menu, X, Moon, Sun, BookOpen, Brain, MessageCircle } from 'lucide-react'
+import { Menu, X, Moon, Sun, MessageCircle } from 'lucide-react'
 import { useTheme } from 'next-themes'
 import { Button } from '@/components/ui/button'
 
@@ -27,7 +28,13 @@ export function Header() {
       <div className="flex h-16 items-center justify-between px-4 sm:px-6">
         {/* Logo */}
         <Link href="/" className="flex items-center gap-2 font-bold text-lg text-primary">
-          <Brain className="h-6 w-6" />
+          <Image
+            src="/rabbit.png"
+            alt="MedStudy"
+            width={24}
+            height={24}
+            className="h-8 w-8 object-contain"
+          />
           <span className="hidden sm:inline">MedStudy</span>
         </Link>
 
