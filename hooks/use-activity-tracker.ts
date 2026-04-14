@@ -107,7 +107,9 @@ function notify(data: ActivityData) {
 
 function subscribe(fn: Listener) {
   listeners.add(fn)
-  return () => listeners.delete(fn)
+  return () => {
+    listeners.delete(fn)
+  }
 }
 
 // ─── Tracker hook (call once, anywhere in the tree) ──────────────────────────

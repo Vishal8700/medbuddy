@@ -21,9 +21,10 @@ declare module 'react-syntax-highlighter' {
 }
 
 declare module 'react-syntax-highlighter/dist/esm/styles/prism' {
+  const styles: Record<string, Record<string, Record<string, string | number>>>
   export const oneDark: Record<string, Record<string, string | number>>
   export const oneLight: Record<string, Record<string, string | number>>
   export const atomDark: Record<string, Record<string, string | number>>
   export const dracula: Record<string, Record<string, string | number>>
-  [key: string]: Record<string, Record<string, string | number>>
+  export default styles
 }

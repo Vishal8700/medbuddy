@@ -43,7 +43,15 @@ export function PdfViewerLayout({ file, title }: PdfViewerLayoutProps) {
     setIsLoading(true)
 
     try {
-      const systemContext = `You are a study assistant helping a student read "${title}" (a PDF document). The student is currently on page ${currentPage}${totalPages ? ` of ${totalPages}` : ''}. Answer questions based on the document context. Be concise and educational.`
+      const systemContext = `You are a study assistant helping a student read "${title}" (a PDF document). The student is currently on page ${currentPage}${totalPages ? ` of ${totalPages}` : ''}. Answer questions based on the document context.
+
+Response style:
+- For MCQs or direct answer questions, start with "Correct answer: <option letter> - <answer text>".
+- Then write "Explanation:" on the next line.
+- Use short dash bullets as pointers.
+- Explain the concept in simple student-friendly wording.
+- If helpful, add "Why other options are not correct:" with short bullets.
+- Keep the response concise and easy to read on mobile.`
 
       const res = await fetch('/api/chat', {
         method: 'POST',
@@ -56,7 +64,7 @@ export function PdfViewerLayout({ file, title }: PdfViewerLayoutProps) {
         }),
       })
 
-      if (!res.ok) throw new Error('API error')
+      if (!res.ok) throw new Error(await readError(res))
 
       const reader = res.body?.getReader()
       const decoder = new TextDecoder()
@@ -94,10 +102,13 @@ export function PdfViewerLayout({ file, title }: PdfViewerLayoutProps) {
           return updated
         })
       }
-    } catch {
+    } catch (error) {
       setMessages((prev) => {
         const updated = [...prev]
-        updated[updated.length - 1] = { role: 'assistant', content: 'Sorry, something went wrong. Please try again.' }
+        updated[updated.length - 1] = {
+          role: 'assistant',
+          content: error instanceof Error ? error.message : 'Sorry, something went wrong. Please try again.',
+        }
         return updated
       })
     } finally {
@@ -109,6 +120,15 @@ export function PdfViewerLayout({ file, title }: PdfViewerLayoutProps) {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       handleSend(e as unknown as React.FormEvent)
+    }
+  }
+
+  const readError = async (response: Response) => {
+    try {
+      const data = await response.json()
+      return data.error || 'API error'
+    } catch {
+      return 'API error'
     }
   }
 
@@ -165,7 +185,7 @@ export function PdfViewerLayout({ file, title }: PdfViewerLayoutProps) {
                 </div>
               )}
               <div
-                className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm leading-relaxed ${
+                className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-3 py-2 text-sm leading-relaxed ${
                   msg.role === 'user'
                     ? 'bg-primary text-primary-foreground rounded-tr-sm'
                     : 'bg-muted text-foreground rounded-tl-sm'

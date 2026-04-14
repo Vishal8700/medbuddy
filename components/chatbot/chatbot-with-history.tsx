@@ -113,7 +113,7 @@ export function ChatbotWithHistory() {
         }),
       })
 
-      if (!res.ok) throw new Error('API error')
+      if (!res.ok) throw new Error(await readError(res))
 
       const reader = res.body?.getReader()
       const decoder = new TextDecoder()
@@ -143,8 +143,11 @@ export function ChatbotWithHistory() {
       if (!fullContent) {
         updateLastMessage(currentSessionId, 'Sorry, I could not generate a response. Please try again.')
       }
-    } catch {
-      updateLastMessage(currentSessionId, 'Sorry, I encountered an error. Please try again.')
+    } catch (error) {
+      updateLastMessage(
+        currentSessionId,
+        error instanceof Error ? error.message : 'Sorry, I encountered an error. Please try again.',
+      )
     } finally {
       setIsLoading(false)
     }
@@ -154,6 +157,15 @@ export function ChatbotWithHistory() {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
       handleSend()
+    }
+  }
+
+  const readError = async (response: Response) => {
+    try {
+      const data = await response.json()
+      return data.error || 'API error'
+    } catch {
+      return 'API error'
     }
   }
 

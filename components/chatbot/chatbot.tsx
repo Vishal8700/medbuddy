@@ -61,14 +61,13 @@ export function ChatBot({ onClose }: ChatBotProps) {
       })
 
       if (!response.ok) {
-        throw new Error('Failed to get response')
+        throw new Error(await readError(response))
       }
 
-      const data = await response.json()
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: data.response,
+        content: await readStream(response),
       }
 
       setMessages((prev) => [...prev, assistantMessage])
@@ -77,11 +76,50 @@ export function ChatBot({ onClose }: ChatBotProps) {
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
-        content: 'Sorry, I encountered an error. Please try again.',
+        content: error instanceof Error ? error.message : 'Sorry, I encountered an error. Please try again.',
       }
       setMessages((prev) => [...prev, errorMessage])
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const readStream = async (response: Response) => {
+    const reader = response.body?.getReader()
+    if (!reader) return 'Sorry, I could not generate a response. Please try again.'
+
+    const decoder = new TextDecoder()
+    let fullContent = ''
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+
+      const chunk = decoder.decode(value, { stream: true })
+      for (const line of chunk.split('\n')) {
+        if (!line.startsWith('data: ')) continue
+        const data = line.slice(6).trim()
+        if (data === '[DONE]') return fullContent
+
+        try {
+          const parsed = JSON.parse(data)
+          const delta = parsed.choices?.[0]?.delta?.content
+          if (delta) fullContent += delta
+        } catch {
+          // Skip malformed stream fragments.
+        }
+      }
+    }
+
+    return fullContent || 'Sorry, I could not generate a response. Please try again.'
+  }
+
+  const readError = async (response: Response) => {
+    try {
+      const data = await response.json()
+      return data.error || 'Failed to get response'
+    } catch {
+      return 'Failed to get response'
     }
   }
 
